@@ -34,6 +34,12 @@ def shuffle_n(n: int):
         line.save()
 
 
+def walk_n(start: int, steps: int):
+    pointer = Mess.get_by_id(start)
+    for _ in range(steps):
+        pointer = Mess.get_by_id(pointer.next)
+
+
 @app.http_state(state.HTTP_INTERNAL_SERVER_ERROR, state.METHOD_ALL)
 @app.http_state(state.HTTP_SERVICE_UNAVAILABLE, state.METHOD_ALL)
 def internal_server_error(req):
@@ -54,6 +60,12 @@ def internal_server_error(req):
 def shuffle_fce(req, n):
     shuffle_n(n)
     return TextResponse(str(n))
+
+
+@app.route('/walk/<start:int>/<steps:int>')
+def walk_fce(req, start, steps):
+    walk_n(start, steps)
+    return TextResponse('ok')
 
 
 if __name__ == '__main__':
