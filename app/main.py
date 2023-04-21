@@ -6,11 +6,32 @@ import os
 import peewee
 import logging
 from sys import exc_info
+from random import shuffle
 
 log = logging.getLogger('spammer')
 app = Application('test')
-mysql_host = os.environ['MYSQL_HOST']
-#db = peewee.MySQLDatabase(host=mysql_host, charset='utf8mb4')
+db = peewee.MySQLDatabase(
+    host=os.environ['MYSQL_HOST'],
+    passwd=os.environ['MYSQL_PASSWORD'],
+    user='root',
+    database='spammer',
+    charset='utf8mb4')
+
+
+class Mess(peewee.Model):
+    class Meta:
+        database = db
+    id = peewee.IntegerField(primary_key=True)
+    next = peewee.IntegerField()
+
+
+def shuffle_n(n: int):
+    Mess.delete().execute()
+    mess = list(range(n))
+    shuffle(mess)
+    for i in range(n):
+        line = Mess.create(id=mess[i], next=mess[(i + 1) % n])
+        line.save()
 
 
 @app.http_state(state.HTTP_INTERNAL_SERVER_ERROR, state.METHOD_ALL)
@@ -30,10 +51,12 @@ def internal_server_error(req):
 
 
 @app.route('/shuffle/<n:int>')
-def shuffle(req, n):
+def shuffle_fce(req, n):
+    shuffle_n(n)
     return TextResponse(str(n))
 
 
 if __name__ == '__main__':
+    shuffle_n(13)
     httpd = make_server('127.0.0.1', 8080, app)
     httpd.serve_forever()
